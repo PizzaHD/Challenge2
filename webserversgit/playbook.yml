@@ -1,0 +1,103 @@
+- name: Install and configure LAMP stack on Ubuntu
+  hosts: webservers
+  become: yes
+
+  tasks:
+          - name: Install Apache, MySQL server, PHP and pip
+            apt:
+                    name:
+                    - apache2
+                    - mysql-server
+                    - php
+                    - libapache2-mod-php
+                    - php-mysql
+                    - python3-pip
+                    state: present
+
+          - name: Enable UFW
+            community.general.ufw:
+                    state: enabled
+
+          - name: Allow Apache Full profile in UFW (port 80, 443)
+            community.general.ufw:
+                    rule: allow
+                    name: Apache Full
+
+          - name: Allow OpenSSH profile in UFW (port 22)
+            community.general.ufw:
+                    rule: allow
+                    name: OpenSSH
+
+          - name: Install PyMySQL and cryptography Python packages
+            pip:
+                    name:
+                    - PyMySQL
+                    - cryptography
+
+          - name: Simulate mysql_secure_installation
+            block:
+                    - name: Remove anonymous-user accounts
+                      community.mysql.mysql_user:
+                              name: ''
+                              host_all: yes
+                              state: absent
+                              login_unix_socket: /var/run/mysqld/mysqld.sock
+
+                    - name: Remove test database
+                      community.mysql.mysql_db:
+                              name: test
+                              state: absent
+                              login_unix_socket: /var/run/mysqld/mysqld.sock
+
+          - name: Copy Apache VirtualHost configuration file to node
+            template:
+                    src: templates/apache-virtualhost.j2
+                    dest: /etc/apache2/sites-available/default.conf
+
+          - name: Enable mod_ssl Apache module
+            community.general.apache2_module:
+                    state: present
+                    name: ssl
+
+          - name: Create self-signed certificate
+            block:
+                  - name: Generate OpenSSL private key
+                    community.crypto.openssl_privatekey:
+                            path: /etc/ssl/private/apache-selfsigned.pem
+
+                  - name: Create csr directory
+                    file:
+                            path: /etc/ssl/csr
+                            state: directory
+
+                  - name: Generate OpenSSl Certificate Signing Request
+                    community.crypto.openssl_csr:
+                            path: /etc/ssl/csr/apache-selfsigned.csr
+                            privatekey_path: /etc/ssl/private/apache-selfsigned.pem
+                            common_name: "{{ ansible_default_ipv4.address }}"
+
+                  - name: Generate OpenSSL self-signed cerificate
+                    community.crypto.x509_certificate:
+                            path: /etc/ssl/certs/apache-selfsigned.crt
+                            privatekey_path: /etc/ssl/private/apache-selfsigned.pem
+                            csr_path: /etc/ssl/csr/apache-selfsigned.csr
+                            provider: selfsigned
+
+          - name: Copy Apache VirtualHost configuration file for SSL to node
+            template:
+                    src: templates/apache-virtualhost-ssl.j2
+                    dest: /etc/apache2/sites-available/ssl.conf
+
+          - name: Disable default Apache VirtualHost
+            command: a2dissite 000-default
+
+          - name: Enable newly created default Apache VirtualHost 
+            command: a2ensite default
+
+          - name: Enable newly created Apache VirtualHost for SSL
+            command: a2ensite ssl
+
+          - name: Restart apache2 service
+            systemd:
+                    state: restarted
+                    name: apache2

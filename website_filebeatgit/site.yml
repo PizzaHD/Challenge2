@@ -1,0 +1,77 @@
+---
+- name: Install and configure filebeat
+  hosts: webservers
+  become: yes
+
+  tasks:
+          - name: Download Filebeat Package
+            get_url:
+                    url: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.9.2-amd64.deb
+                    dest: /tmp
+
+          - name: Install FileBeat Deb Package
+            become: yes
+            apt:
+                    deb: /tmp/filebeat-7.9.2-amd64.deb
+
+
+
+
+
+         # - name: Download filebeat package
+          #  get_url:
+           #         url: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.9.2-linux-x86_64.tar.gz
+            #        dest: /root/filebeat-7.9.2-linux-x86_64.tar.gz 
+
+         # - name: Extract filebeat package
+         #   unarchive:
+         #           src: /root/filebeat-7.9.2-linux-x86_64.tar.gz
+         #           dest: /root/
+         #           remote_src: yes
+
+
+
+
+          - name: Edit filebeat.yml 1/3 enable shit
+            replace:
+                    path: /etc/filebeat/filebeat.yml
+                    regexp: '^  enabled: false$'
+                    replace: '  enabled: true'
+
+          - name: Edit filebeat.yml 2/3 elastic shit
+            replace:
+                    path: /etc/filebeat/filebeat.yml
+                    regexp: '^  hosts: \["localhost:9200"\]$'
+                    replace: '  hosts: ["172.168.14.12:9200"]'
+
+          - name: Edit filebeat.yml 3/3 kibana
+
+            replace:
+                    path: /etc/filebeat/filebeat.yml
+                    regexp: '^(.*)host: "localhost:5601"$'
+                    replace: '  host: "172.168.14.12:5601"'
+
+
+          - name: Enable filebeat modules system and apache
+            command: filebeat modules enable system apache
+
+
+          - name: Run filebeat setup
+            command: filebeat setup -e
+
+            #          - name: Set premisions
+            #            command:
+            #                    argv:
+            #                              - chown root filebeat.yml
+            #                              - chown root /root/filebeat-7.9.2-linux-x86_64/modules.d/system.yml
+
+          - name: Enable and start filebeat service
+            service:
+                    name: filebeat
+                    state: started
+                    enabled: yes
+  
+
+
+ 
+

@@ -1,0 +1,11 @@
+<VirtualHost *:443>
+	ServerName {{ ansible_default_ipv4.address }}
+	DocumentRoot /var/www/html
+
+	SSLEngine on
+	SSLCertificateFile /etc/ssl/certs/apache-selfsigned.crt
+	SSLCertificateKeyFile /etc/ssl/private/apache-selfsigned.pem
+
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+	CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
