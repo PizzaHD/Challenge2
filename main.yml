@@ -1,0 +1,32 @@
+---
+
+- name: Add allow rule by host alias
+  shell: easyrule pass lan tcp lan lan 5665
+
+- name: Add allow rule by host 
+  shell: easyrule pass lan tcp 172.168.14.1 172.168.14.11 80
+
+- name: Add allow rule by host 
+  shell: easyrule pass lan tcp 172.168.14.1 172.168.14.13 80
+
+- name: Add allow rule by host
+  shell: easyrule pass lan tcp 172.168.14.1 172.168.14.11 22
+
+- name: Add allow rule by host
+  shell: easyrule pass lan tcp 172.168.14.1 172.168.14.13 22
+
+- name: Add allow rule by host
+  shell: easyrule pass lan tcp 172.168.14.1 172.168.14.11 53
+
+- name: Add allow rule by host
+  shell: easyrule pass lan tcp 172.168.14.1 172.168.14.13 53
+
+- name: Add allow rule by host
+  shell: easyrule pass lan tcp 172.168.14.1 172.168.14.11 443
+
+- name: Add allow rule by host
+  shell: easyrule pass lan tcp 172.168.14.1 172.168.14.13 443
+
+- name: Add allow rule by host
+  shell: easyrule pass lan tcp 172.168.14.1 172.168.14.12 5601
+...
